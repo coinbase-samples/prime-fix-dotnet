@@ -42,7 +42,6 @@ Your C# FIX client requires environment variables to sign the FIX Logon. Set the
 export ACCESS_KEY="your_api_access_key"
 export SIGNING_KEY="your_api_secret_key"
 export PASSPHRASE="your_api_passphrase"
-export TARGET_COMP_ID="COIN"
 export PORTFOLIO_ID="your_portfolio_id"
 export SVC_ACCOUNT_ID="your_service_account_id"
 ```

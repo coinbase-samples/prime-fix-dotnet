@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+using PrimeFixDotNet.Constants;
 using PrimeFixDotNet.Repl;
 using PrimeFixDotNet.Session;
+using PrimeFixDotNet.Utils;
 using QuickFix;
 using QuickFix.Transport;
 using QuickFix.Store;
@@ -30,10 +32,9 @@ namespace PrimeFixDotNet
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("C# FIX Client for Coinbase Prime v1.0.0");
+            Console.WriteLine(VersionUtils.GetApplicationNameWithVersion());
             Console.WriteLine();
 
-            // Configure Serilog (simple console logging like Java)
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
                 .WriteTo.Console()
@@ -41,7 +42,6 @@ namespace PrimeFixDotNet
 
             try
             {
-                // Get credentials from environment variables (same as Java)
                 string accessKey = GetRequiredEnv("ACCESS_KEY");
                 string signingKey = GetRequiredEnv("SIGNING_KEY");
                 string passphrase = GetRequiredEnv("PASSPHRASE");
@@ -51,16 +51,14 @@ namespace PrimeFixDotNet
 
                 string configFile = args.Length > 0 ? args[0] : DEFAULT_CONFIG_FILE;
 
-                // Create application (direct port of Java)
                 using var application = new PrimeFixApplication(
                     accessKey, signingKey, passphrase,
                     svcAccountId, targetCompId, portfolioId
                 );
 
-                // Initialize QuickFIX/N components (direct port of Java setup)
                 var settings = new SessionSettings(configFile);
                 var storeFactory = new FileStoreFactory(settings);
-                var logFactory = new FileLogFactory(settings); // Note: Java uses RawLogFactory
+                var logFactory = new FileLogFactory(settings);
                 var messageFactory = new DefaultMessageFactory();
 
                 var initiator = new SocketInitiator(
@@ -80,7 +78,7 @@ namespace PrimeFixDotNet
                     Log.Information("Shutting down FIX client");
                     repl.Stop();
                     initiator.Stop();
-                    Environment.Exit(0);
+                    Environment.Exit(ApplicationConstants.EXIT_SUCCESS);
                 };
 
                 Console.WriteLine("Waiting for FIX connection...");
@@ -88,9 +86,9 @@ namespace PrimeFixDotNet
                 // Verify connection with detailed status
                 bool connected = false;
                 int attempts = 0;
-                while (!connected && attempts < 30) // 30 second timeout
+                while (!connected && attempts < ApplicationConstants.MAX_CONNECTION_ATTEMPTS)
                 {
-                    await Task.Delay(1000);
+                    await Task.Delay(ApplicationConstants.CONNECTION_RETRY_DELAY_MS);
                     attempts++;
                     
                     if (application.SessionId != null)
@@ -106,19 +104,19 @@ namespace PrimeFixDotNet
                         }
                         else
                         {
-                            Console.WriteLine($"Attempt {attempts}/30: Session exists but not logged on yet...");
+                            Console.WriteLine($"Attempt {attempts}/{ApplicationConstants.MAX_CONNECTION_ATTEMPTS}: Session exists but not logged on yet...");
                         }
                     }
                     else
                     {
-                        Console.WriteLine($"Attempt {attempts}/30: No session yet...");
+                        Console.WriteLine($"Attempt {attempts}/{ApplicationConstants.MAX_CONNECTION_ATTEMPTS}: No session yet...");
                     }
                 }
 
                 if (!connected)
                 {
-                    Console.WriteLine("Connection failed after 30 seconds");
-                    Environment.Exit(1);
+                    Console.WriteLine($"Connection failed after {ApplicationConstants.CONNECTION_TIMEOUT_SECONDS} seconds");
+                    Environment.Exit(ApplicationConstants.EXIT_FAILURE);
                 }
 
                 // Start REPL for interactive order management
@@ -130,7 +128,7 @@ namespace PrimeFixDotNet
             {
                 Log.Error(e, "Failed to start FIX client");
                 Console.Error.WriteLine($"Error: {e.Message}");
-                Environment.Exit(1);
+                Environment.Exit(ApplicationConstants.EXIT_FAILURE);
             }
             finally
             {
@@ -152,7 +150,7 @@ namespace PrimeFixDotNet
                 Console.Error.WriteLine("  PORTFOLIO_ID - Your portfolio ID");
                 Console.Error.WriteLine("Optional environment variables:");
                 Console.Error.WriteLine("  TARGET_COMP_ID - Target company ID (default: COIN)");
-                Environment.Exit(1);
+                Environment.Exit(ApplicationConstants.EXIT_FAILURE);
             }
             return value.Trim();
         }

@@ -29,8 +29,7 @@ namespace PrimeFixDotNet.Builder
                                     string apiSecret, string passphrase, string targetCompId,
                                     string portfolioId)
         {
-            // Direct port of Java implementation - always use sequence "1"
-            string signature = FixUtils.Sign(timestamp, FixConstants.MSG_TYPE_LOGON, "1",
+            string signature = FixUtils.Sign(timestamp, FixConstants.MSG_TYPE_LOGON, ApplicationConstants.LOGON_SEQUENCE_NUMBER,
                                            apiKey, targetCompId, passphrase, apiSecret);
 
             message.SetField(new Account(portfolioId));
@@ -165,7 +164,7 @@ namespace PrimeFixDotNet.Builder
             message.SetField(new OrderID(orderInfo.OrderId ?? ""));
             
             // Use the same quantity type as the original order
-            decimal quantity = decimal.Parse(orderInfo.Quantity ?? "0", CultureInfo.InvariantCulture);
+            decimal quantity = decimal.Parse(orderInfo.Quantity ?? ApplicationConstants.DEFAULT_QUANTITY, CultureInfo.InvariantCulture);
             if (FixConstants.QTY_TYPE_QUOTE.Equals(orderInfo.QuantityType, StringComparison.OrdinalIgnoreCase))
             {
                 message.SetField(new CashOrderQty(quantity)); // Tag 152

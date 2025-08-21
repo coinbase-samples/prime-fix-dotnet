@@ -35,18 +35,18 @@ namespace PrimeFixDotNet.Repl
 
         public void HandleNewOrder(string[] parts)
         {
-            if (parts.Length < 6)
+            if (parts.Length < ApplicationConstants.MIN_NEW_ORDER_ARGS)
             {
                 Console.WriteLine("error: insufficient arguments");
                 Console.WriteLine("usage: new <symbol> <MARKET|LIMIT|VWAP> <BUY|SELL> <BASE|QUOTE> <qty> [price] [start_time] [participation_rate] [expire_time]");
                 return;
             }
 
-            string symbol = parts[1];
-            string ordType = parts[2].ToUpper();
-            string side = parts[3].ToUpper();
-            string qtyType = parts[4].ToUpper();
-            string qty = parts[5];
+            string symbol = parts[ApplicationConstants.SYMBOL_INDEX];
+            string ordType = parts[ApplicationConstants.ORDER_TYPE_INDEX].ToUpper();
+            string side = parts[ApplicationConstants.SIDE_INDEX].ToUpper();
+            string qtyType = parts[ApplicationConstants.QTY_TYPE_INDEX].ToUpper();
+            string qty = parts[ApplicationConstants.QUANTITY_INDEX];
             string? price = null;
 
             if (!FixConstants.SIDE_BUY.Equals(side) && !FixConstants.SIDE_SELL.Equals(side))
@@ -70,7 +70,7 @@ namespace PrimeFixDotNet.Repl
             switch (ordType)
             {
                 case FixConstants.ORD_TYPE_MARKET:
-                    if (parts.Length > 6)
+                    if (parts.Length > ApplicationConstants.MIN_LIMIT_ORDER_ARGS)
                     {
                         Console.WriteLine("error: MARKET orders should not include a price");
                         return;
@@ -78,12 +78,12 @@ namespace PrimeFixDotNet.Repl
                     break;
 
                 case FixConstants.ORD_TYPE_LIMIT:
-                    if (parts.Length < 7)
+                    if (parts.Length < ApplicationConstants.MIN_LIMIT_ORDER_ARGS)
                     {
                         Console.WriteLine("error: price must be specified for LIMIT orders");
                         return;
                     }
-                    price = parts[6];
+                    price = parts[ApplicationConstants.PRICE_INDEX];
                     if (!FixUtils.IsValidNumber(price))
                     {
                         Console.WriteLine("error: price must be a valid number");
@@ -92,12 +92,12 @@ namespace PrimeFixDotNet.Repl
                     break;
 
                 case FixConstants.ORD_TYPE_VWAP:
-                    if (parts.Length < 7)
+                    if (parts.Length < ApplicationConstants.MIN_VWAP_ORDER_ARGS)
                     {
                         Console.WriteLine("error: price must be specified for VWAP orders");
                         return;
                     }
-                    price = parts[6];
+                    price = parts[ApplicationConstants.PRICE_INDEX];
                     if (!FixUtils.IsValidNumber(price))
                     {
                         Console.WriteLine("error: price must be a valid number");
@@ -111,9 +111,9 @@ namespace PrimeFixDotNet.Repl
             }
 
             string[] vwapParams = Array.Empty<string>();
-            if (FixConstants.ORD_TYPE_VWAP.Equals(ordType) && parts.Length > 7)
+            if (FixConstants.ORD_TYPE_VWAP.Equals(ordType) && parts.Length > ApplicationConstants.VWAP_PARAMS_START_INDEX)
             {
-                vwapParams = parts[7..];
+                vwapParams = parts[ApplicationConstants.VWAP_PARAMS_START_INDEX..];
             }
 
             try
@@ -143,16 +143,16 @@ namespace PrimeFixDotNet.Repl
 
         public void HandleOrderStatus(string[] parts)
         {
-            if (parts.Length < 2)
+            if (parts.Length < ApplicationConstants.MIN_STATUS_REQUEST_ARGS)
             {
                 Console.WriteLine("usage: status <ClOrdId> [OrderId] [Side] [Symbol]");
                 return;
             }
 
-            string clOrdId = parts[1];
-            string orderId = parts.Length > 2 ? parts[2] : "";
-            string side = parts.Length > 3 ? parts[3] : "";
-            string symbol = parts.Length > 4 ? parts[4] : "";
+            string clOrdId = parts[ApplicationConstants.STATUS_CL_ORD_ID_INDEX];
+            string orderId = parts.Length > ApplicationConstants.STATUS_ORDER_ID_INDEX ? parts[ApplicationConstants.STATUS_ORDER_ID_INDEX] : "";
+            string side = parts.Length > ApplicationConstants.STATUS_SIDE_INDEX ? parts[ApplicationConstants.STATUS_SIDE_INDEX] : "";
+            string symbol = parts.Length > ApplicationConstants.STATUS_SYMBOL_INDEX ? parts[ApplicationConstants.STATUS_SYMBOL_INDEX] : "";
 
             ConcurrentDictionary<string, OrderInfo> orders = _application.Orders;
             _application.OrdersLock.EnterReadLock();
@@ -210,13 +210,13 @@ namespace PrimeFixDotNet.Repl
 
         public void HandleOrderCancel(string[] parts)
         {
-            if (parts.Length < 2)
+            if (parts.Length < ApplicationConstants.MIN_CANCEL_REQUEST_ARGS)
             {
                 Console.WriteLine("usage: cancel <ClOrdId>");
                 return;
             }
 
-            string clOrdId = parts[1];
+            string clOrdId = parts[ApplicationConstants.CANCEL_CL_ORD_ID_INDEX];
 
             ConcurrentDictionary<string, OrderInfo> orders = _application.Orders;
             _application.OrdersLock.EnterReadLock();
@@ -274,7 +274,7 @@ namespace PrimeFixDotNet.Repl
 
                 foreach (var order in orders.Values)
                 {
-                    Console.WriteLine($"{order.ClOrdId,-20} → {order.OrderId} ({order.Side} {order.Symbol} {order.Quantity})");
+                    Console.WriteLine($"{order.ClOrdId,ApplicationConstants.ORDER_LIST_ID_COLUMN_WIDTH} → {order.OrderId} ({order.Side} {order.Symbol} {order.Quantity})");
                 }
             }
             finally
@@ -285,7 +285,7 @@ namespace PrimeFixDotNet.Repl
 
         public void HandleVersion()
         {
-            Console.WriteLine("C# FIX Client for Coinbase Prime v1.0.0");
+            Console.WriteLine(VersionUtils.GetApplicationNameWithVersion());
         }
 
         public void HandleUnknownCommand(string command)

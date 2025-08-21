@@ -160,7 +160,7 @@ namespace PrimeFixDotNet.Session
                         }
                         catch
                         {
-                            quantity = "0";
+                            quantity = ApplicationConstants.DEFAULT_QUANTITY;
                             quantityType = FixConstants.QTY_TYPE_BASE; // default
                         }
                     }
