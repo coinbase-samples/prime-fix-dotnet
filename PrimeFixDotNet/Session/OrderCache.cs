@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-using System.Collections.Concurrent;
 using System.Text.Json;
+using PrimeFixDotNet.Constants;
 using PrimeFixDotNet.Model;
 using Serilog;
 
@@ -24,7 +24,6 @@ namespace PrimeFixDotNet.Session
     public class OrderCache
     {
         private static readonly ILogger Logger = Log.ForContext<OrderCache>();
-        private const string ORDER_FILE = "orders.json";
 
         private readonly JsonSerializerOptions _jsonOptions;
 
@@ -40,12 +39,12 @@ namespace PrimeFixDotNet.Session
         /// <summary>
         /// Save orders to JSON file
         /// </summary>
-        public void SaveOrders(ConcurrentDictionary<string, OrderInfo> orders)
+        public void SaveOrders(Dictionary<string, OrderInfo> orders)
         {
             try
             {
                 var json = JsonSerializer.Serialize(orders, _jsonOptions);
-                File.WriteAllText(ORDER_FILE, json);
+                File.WriteAllText(ApplicationConstants.ORDER_CACHE_FILE, json);
             }
             catch (Exception e)
             {
@@ -56,9 +55,9 @@ namespace PrimeFixDotNet.Session
         /// <summary>
         /// Load orders from JSON file
         /// </summary>
-        public void LoadOrders(ConcurrentDictionary<string, OrderInfo> orders)
+        public void LoadOrders(Dictionary<string, OrderInfo> orders)
         {
-            if (!File.Exists(ORDER_FILE))
+            if (!File.Exists(ApplicationConstants.ORDER_CACHE_FILE))
             {
                 Logger.Information("Orders file does not exist, starting with empty cache");
                 return;
@@ -66,7 +65,7 @@ namespace PrimeFixDotNet.Session
 
             try
             {
-                var json = File.ReadAllText(ORDER_FILE);
+                var json = File.ReadAllText(ApplicationConstants.ORDER_CACHE_FILE);
                 var loadedOrders = JsonSerializer.Deserialize<Dictionary<string, OrderInfo>>(json, _jsonOptions);
                 
                 if (loadedOrders != null)
@@ -74,7 +73,7 @@ namespace PrimeFixDotNet.Session
                     orders.Clear();
                     foreach (var kvp in loadedOrders)
                     {
-                        orders.TryAdd(kvp.Key, kvp.Value);
+                        orders[kvp.Key] = kvp.Value;
                     }
                     Logger.Information("Loaded {OrderCount} orders from cache", orders.Count);
                 }

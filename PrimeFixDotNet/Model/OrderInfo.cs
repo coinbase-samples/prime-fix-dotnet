@@ -14,40 +14,28 @@
  * limitations under the License.
  */
 
-using System.Text.Json.Serialization;
-
 namespace PrimeFixDotNet.Model
 {
     public class OrderInfo
     {
-        [JsonPropertyName("clOrdId")]
         public string? ClOrdId { get; set; }
 
-        [JsonPropertyName("orderId")]
         public string? OrderId { get; set; }
 
-        [JsonPropertyName("side")]
         public string? Side { get; set; }
 
-        [JsonPropertyName("symbol")]
         public string? Symbol { get; set; }
 
-        [JsonPropertyName("quantity")]
         public string? Quantity { get; set; }
 
-        [JsonPropertyName("limitPrice")]
         public string? LimitPrice { get; set; }
 
-        [JsonPropertyName("startTime")]
         public string? StartTime { get; set; }
 
-        [JsonPropertyName("expireTime")]
         public string? ExpireTime { get; set; }
 
-        [JsonPropertyName("participationRate")]
         public string? ParticipationRate { get; set; }
 
-        [JsonPropertyName("quantityType")]
         public string? QuantityType { get; set; } // "BASE" or "QUOTE"
 
         public OrderInfo() { }

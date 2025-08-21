@@ -56,6 +56,12 @@ namespace PrimeFixDotNet.Constants
         // FIX protocol defaults
         public const string LOGON_SEQUENCE_NUMBER = "1";
         public const string DEFAULT_QUANTITY = "0";
+        
+        // File paths
+        public const string ORDER_CACHE_FILE = "orders.json";
+        
+        // Logging configuration
+        public const string DEFAULT_LOG_LEVEL = "Information";
 
         // Display formatting
         public const int ORDER_LIST_ID_COLUMN_WIDTH = -20;

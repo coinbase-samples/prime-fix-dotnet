@@ -29,7 +29,7 @@ namespace PrimeFixDotNet.Builder
                                     string apiSecret, string passphrase, string targetCompId,
                                     string portfolioId)
         {
-            string signature = FixUtils.Sign(timestamp, FixConstants.MSG_TYPE_LOGON, ApplicationConstants.LOGON_SEQUENCE_NUMBER,
+            string signature = FixUtils.Sign(timestamp, MsgType.LOGON, ApplicationConstants.LOGON_SEQUENCE_NUMBER,
                                            apiKey, targetCompId, passphrase, apiSecret);
 
             message.SetField(new Account(portfolioId));
@@ -46,7 +46,7 @@ namespace PrimeFixDotNet.Builder
         {
             var message = new Message();
 
-            message.Header.SetField(new MsgType(FixConstants.MSG_TYPE_NEW));
+            message.Header.SetField(new MsgType(MsgType.ORDER_SINGLE));
             message.Header.SetField(new SenderCompID(senderCompId));
             message.Header.SetField(new TargetCompID(targetCompId));
             message.Header.SetField(new SendingTime());
@@ -69,54 +69,54 @@ namespace PrimeFixDotNet.Builder
 
             if (FixConstants.ORD_TYPE_LIMIT.Equals(ordType, StringComparison.OrdinalIgnoreCase))
             {
-                message.SetField(new OrdType(FixConstants.ORD_TYPE_LIMIT_FIX));
-                message.SetField(new TimeInForce(FixConstants.TIME_IN_FORCE_GTC));
+                message.SetField(new OrdType(OrdType.LIMIT));
+                message.SetField(new TimeInForce(TimeInForce.GOOD_TILL_CANCEL));
                 if (price != null)
                 {
                     message.SetField(new Price(decimal.Parse(price, CultureInfo.InvariantCulture)));
                 }
-                message.SetField(new StringField(FixConstants.TAG_TARGET_STRATEGY, FixConstants.TARGET_STRATEGY_LIMIT));
+                message.SetField(new StringField(Tags.TargetStrategy, FixConstants.TARGET_STRATEGY_LIMIT));
             }
             else if (FixConstants.ORD_TYPE_VWAP.Equals(ordType, StringComparison.OrdinalIgnoreCase))
             {
-                message.SetField(new OrdType(FixConstants.ORD_TYPE_VWAP_FIX));
-                message.SetField(new TimeInForce(FixConstants.TIME_IN_FORCE_GTD));
+                message.SetField(new OrdType(OrdType.LIMIT));
+                message.SetField(new TimeInForce(TimeInForce.GOOD_TILL_DATE));
                 if (price != null)
                 {
                     message.SetField(new Price(decimal.Parse(price, CultureInfo.InvariantCulture)));
                 }
-                message.SetField(new StringField(FixConstants.TAG_TARGET_STRATEGY, FixConstants.TARGET_STRATEGY_VWAP));
+                message.SetField(new StringField(Tags.TargetStrategy, FixConstants.TARGET_STRATEGY_VWAP));
 
                 // Handle VWAP parameters
                 if (vwapParams.Length > 0 && !string.IsNullOrEmpty(vwapParams[0]))
                 {
-                    message.SetField(new StringField(FixConstants.TAG_START_TIME, vwapParams[0]));
+                    message.SetField(new StringField(Tags.EffectiveTime, vwapParams[0]));
                 }
 
                 if (vwapParams.Length > 1 && !string.IsNullOrEmpty(vwapParams[1]))
                 {
-                    message.SetField(new StringField(FixConstants.TAG_PARTICIPATION_RATE, vwapParams[1]));
+                    message.SetField(new StringField(Tags.ParticipationRate, vwapParams[1]));
                 }
 
                 if (vwapParams.Length > 2 && !string.IsNullOrEmpty(vwapParams[2]))
                 {
-                    message.SetField(new StringField(FixConstants.TAG_EXPIRE_TIME, vwapParams[2]));
+                    message.SetField(new StringField(Tags.ExpireTime, vwapParams[2]));
                 }
             }
             else // Market order
             {
-                message.SetField(new OrdType(FixConstants.ORD_TYPE_MARKET_FIX));
-                message.SetField(new TimeInForce(FixConstants.TIME_IN_FORCE_IOC));
-                message.SetField(new StringField(FixConstants.TAG_TARGET_STRATEGY, FixConstants.TARGET_STRATEGY_MARKET));
+                message.SetField(new OrdType(OrdType.MARKET));
+                message.SetField(new TimeInForce(TimeInForce.IMMEDIATE_OR_CANCEL));
+                message.SetField(new StringField(Tags.TargetStrategy, FixConstants.TARGET_STRATEGY_MARKET));
             }
 
             if (FixConstants.SIDE_BUY.Equals(side, StringComparison.OrdinalIgnoreCase))
             {
-                message.SetField(new Side(FixConstants.SIDE_BUY_FIX));
+                message.SetField(new Side(Side.BUY));
             }
             else
             {
-                message.SetField(new Side(FixConstants.SIDE_SELL_FIX));
+                message.SetField(new Side(Side.SELL));
             }
 
             return message;
@@ -128,7 +128,7 @@ namespace PrimeFixDotNet.Builder
         {
             var message = new Message();
 
-            message.Header.SetField(new MsgType(FixConstants.MSG_TYPE_STATUS));
+            message.Header.SetField(new MsgType(MsgType.ORDER_STATUS_REQUEST));
             message.Header.SetField(new SenderCompID(senderCompId));
             message.Header.SetField(new TargetCompID(targetCompId));
             message.Header.SetField(new SendingTime());
@@ -138,8 +138,8 @@ namespace PrimeFixDotNet.Builder
             
             // Convert readable side to FIX protocol codes
             char fixSide = FixConstants.SIDE_BUY.Equals(side, StringComparison.OrdinalIgnoreCase) 
-                          ? FixConstants.SIDE_BUY_FIX 
-                          : FixConstants.SIDE_SELL_FIX;
+                          ? Side.BUY 
+                          : Side.SELL;
             message.SetField(new Side(fixSide));
             message.SetField(new Symbol(symbol));
 
@@ -151,7 +151,7 @@ namespace PrimeFixDotNet.Builder
         {
             var message = new Message();
 
-            message.Header.SetField(new MsgType(FixConstants.MSG_TYPE_CANCEL));
+            message.Header.SetField(new MsgType(MsgType.ORDER_CANCEL_REQUEST));
             message.Header.SetField(new SenderCompID(senderCompId));
             message.Header.SetField(new TargetCompID(targetCompId));
             message.Header.SetField(new SendingTime());
@@ -176,8 +176,8 @@ namespace PrimeFixDotNet.Builder
             
             // Convert readable side to FIX protocol codes
             char fixSide = FixConstants.SIDE_BUY.Equals(orderInfo.Side, StringComparison.OrdinalIgnoreCase) 
-                          ? FixConstants.SIDE_BUY_FIX 
-                          : FixConstants.SIDE_SELL_FIX;
+                          ? Side.BUY 
+                          : Side.SELL;
             message.SetField(new Side(fixSide));
             message.SetField(new Symbol(orderInfo.Symbol ?? ""));
 

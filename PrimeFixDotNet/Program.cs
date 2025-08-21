@@ -24,6 +24,7 @@ using QuickFix.Transport;
 using QuickFix.Store;
 using QuickFix.Logger;
 using Serilog;
+using Serilog.Events;
 
 namespace PrimeFixDotNet
 {
@@ -31,13 +32,29 @@ namespace PrimeFixDotNet
     {
         private const string DEFAULT_CONFIG_FILE = "fix.cfg";
 
+        private static LogEventLevel GetLogLevel()
+        {
+            string logLevel = Environment.GetEnvironmentVariable("LOG_LEVEL") ?? ApplicationConstants.DEFAULT_LOG_LEVEL;
+            
+            return logLevel.ToUpper() switch
+            {
+                "VERBOSE" => LogEventLevel.Verbose,
+                "DEBUG" => LogEventLevel.Debug,
+                "INFORMATION" => LogEventLevel.Information,
+                "WARNING" => LogEventLevel.Warning,
+                "ERROR" => LogEventLevel.Error,
+                "FATAL" => LogEventLevel.Fatal,
+                _ => LogEventLevel.Information
+            };
+        }
+
         static async Task Main(string[] args)
         {
             Console.WriteLine(VersionUtils.GetApplicationNameWithVersion());
             Console.WriteLine();
 
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
+                .MinimumLevel.Is(GetLogLevel())
                 .WriteTo.Console()
                 .CreateLogger();
 
@@ -51,12 +68,13 @@ namespace PrimeFixDotNet
                 using var application = new PrimeFixApplication(config);
 
                 var settings = new SessionSettings(configFile);
-                var storeFactory = new FileStoreFactory(settings);
-                var logFactory = new FileLogFactory(settings);
-                var messageFactory = new DefaultMessageFactory();
 
                 var initiator = new SocketInitiator(
-                    application, storeFactory, settings, logFactory, messageFactory
+                    application,
+                    new FileStoreFactory(settings),
+                    settings,
+                    new FileLogFactory(settings),
+                    new DefaultMessageFactory()
                 );
 
                 Log.Information("Starting FIX initiator");
@@ -78,8 +96,10 @@ namespace PrimeFixDotNet
                 Console.WriteLine("Waiting for FIX connection...");
 
                 // Verify connection with detailed status
-                bool connected = false;
-                int attempts = 0;
+                bool connected;
+                int attempts;
+                connected = false;
+                attempts = 0;
                 while (!connected && attempts < ApplicationConstants.MAX_CONNECTION_ATTEMPTS)
                 {
                     await Task.Delay(ApplicationConstants.CONNECTION_RETRY_DELAY_MS);

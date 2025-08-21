@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-using System.Collections.Concurrent;
 using PrimeFixDotNet.Builder;
 using PrimeFixDotNet.Constants;
 using PrimeFixDotNet.Model;
 using PrimeFixDotNet.Utils;
 using QuickFix;
+using QuickFix.Fields;
 using Serilog;
 
 namespace PrimeFixDotNet.Session
@@ -38,7 +38,7 @@ namespace PrimeFixDotNet.Session
         private SessionID? _sessionId;
         
         // Order management
-        private readonly ConcurrentDictionary<string, OrderInfo> _orders;
+        private readonly Dictionary<string, OrderInfo> _orders;
         private readonly ReaderWriterLockSlim _ordersLock;
         private readonly OrderCache _orderCache;
 
@@ -54,7 +54,7 @@ namespace PrimeFixDotNet.Session
             _portfolioId = config.PortfolioId;
             
             // Initialize order management
-            _orders = new ConcurrentDictionary<string, OrderInfo>();
+            _orders = new Dictionary<string, OrderInfo>();
             _ordersLock = new ReaderWriterLockSlim();
             _orderCache = new OrderCache();
             
@@ -92,8 +92,9 @@ namespace PrimeFixDotNet.Session
         {
             try
             {
-                string msgType = message.Header.GetString(FixConstants.TAG_MSG_TYPE);
-                string rawMessage = message.ToString().Replace('\u0001', '|');
+                string msgType, rawMessage;
+                msgType = message.Header.GetString(Tags.MsgType);
+                rawMessage = message.ToString().Replace('\u0001', '|');
                 Logger.Information("INCOMING ADMIN: MsgType={MsgType}, Raw={RawMessage}", msgType, rawMessage);
                 Console.WriteLine($"INCOMING ADMIN: MsgType={msgType}, Raw={rawMessage}");
             }
@@ -107,12 +108,12 @@ namespace PrimeFixDotNet.Session
         {
             try
             {
-                string msgType = message.Header.GetString(FixConstants.TAG_MSG_TYPE);
+                string msgType = message.Header.GetString(Tags.MsgType);
                 
-                if (FixConstants.MSG_TYPE_LOGON.Equals(msgType))
+                if (MsgType.LOGON.Equals(msgType))
                 {
                     // Use the SendingTime that QuickFIX already set in the header
-                    string timestamp = message.Header.GetString(FixConstants.TAG_SENDING_TIME);
+                    string timestamp = message.Header.GetString(Tags.SendingTime);
                     MessageBuilder.BuildLogon(message, timestamp, _apiKey, _apiSecret,
                                             _passphrase, _targetCompId, _portfolioId);
                 }
@@ -132,31 +133,33 @@ namespace PrimeFixDotNet.Session
         {
             try
             {
-                string msgType = message.Header.GetString(FixConstants.TAG_MSG_TYPE);
-                string rawMessage = message.ToString().Replace('\u0001', '|');
+                string msgType, rawMessage;
+                msgType = message.Header.GetString(Tags.MsgType);
+                rawMessage = message.ToString().Replace('\u0001', '|');
                 Logger.Information("OUTGOING APP: MsgType={MsgType}, Raw={RawMessage}", msgType, rawMessage);
                 Console.WriteLine($"OUTGOING APP: MsgType={msgType}, Raw={rawMessage}");
 
                 // Store new orders in cache for tracking
-                if (FixConstants.MSG_TYPE_NEW.Equals(msgType))
+                if (MsgType.ORDER_SINGLE.Equals(msgType))
                 {
-                    string clOrdId = FixUtils.GetString(message, FixConstants.TAG_CL_ORD_ID);
-                    string symbol = FixUtils.GetString(message, FixConstants.TAG_SYMBOL);
-                    string sideValue = FixUtils.GetString(message, FixConstants.TAG_SIDE);
-                    string quantity = "";
-                    string quantityType = "";
+                    string clOrdId, symbol, sideValue, quantity, quantityType;
+                    clOrdId = FixUtils.GetString(message, Tags.ClOrdID);
+                    symbol = FixUtils.GetString(message, Tags.Symbol);
+                    sideValue = FixUtils.GetString(message, Tags.Side);
+                    quantity = "";
+                    quantityType = "";
                     
                     // Try to get OrderQty first (BASE), then CashOrderQty (QUOTE)
                     try
                     {
-                        quantity = message.GetDecimal(FixConstants.TAG_ORDER_QTY).ToString();
+                        quantity = message.GetDecimal(Tags.OrderQty).ToString();
                         quantityType = FixConstants.QTY_TYPE_BASE;
                     }
                     catch
                     {
                         try
                         {
-                            quantity = message.GetDecimal(FixConstants.TAG_CASH_ORDER_QTY).ToString();
+                            quantity = message.GetDecimal(Tags.CashOrderQty).ToString();
                             quantityType = FixConstants.QTY_TYPE_QUOTE;
                         }
                         catch
@@ -169,7 +172,7 @@ namespace PrimeFixDotNet.Session
                     string limitPrice = "";
                     try
                     {
-                        limitPrice = message.GetDecimal(FixConstants.TAG_PRICE).ToString();
+                        limitPrice = message.GetDecimal(Tags.Price).ToString();
                     }
                     catch
                     {
@@ -203,16 +206,18 @@ namespace PrimeFixDotNet.Session
         {
             try
             {
-                string msgType = message.Header.GetString(FixConstants.TAG_MSG_TYPE);
-                string rawMessage = message.ToString().Replace('\u0001', '|');
+                string msgType, rawMessage;
+                msgType = message.Header.GetString(Tags.MsgType);
+                rawMessage = message.ToString().Replace('\u0001', '|');
                 Logger.Information("INCOMING APP: MsgType={MsgType}, Raw={RawMessage}", msgType, rawMessage);
                 Console.WriteLine($"INCOMING APP: MsgType={msgType}, Raw={rawMessage}");
 
                 // Handle execution reports
-                if (FixConstants.MSG_TYPE_EXEC_REPORT.Equals(msgType))
+                if (MsgType.EXECUTION_REPORT.Equals(msgType))
                 {
-                    string clOrdId = FixUtils.GetString(message, FixConstants.TAG_CL_ORD_ID);
-                    string orderId = FixUtils.GetString(message, FixConstants.TAG_ORDER_ID);
+                    string clOrdId, orderId;
+                    clOrdId = FixUtils.GetString(message, Tags.ClOrdID);
+                    orderId = FixUtils.GetString(message, Tags.OrderID);
                     
                     if (!string.IsNullOrEmpty(clOrdId) && !string.IsNullOrEmpty(orderId))
                     {
@@ -244,7 +249,7 @@ namespace PrimeFixDotNet.Session
         public string PortfolioId => _portfolioId;
         
         // Properties for CommandHandler
-        public ConcurrentDictionary<string, OrderInfo> Orders => _orders;
+        public Dictionary<string, OrderInfo> Orders => _orders;
         public ReaderWriterLockSlim OrdersLock => _ordersLock;
 
         public void Dispose()

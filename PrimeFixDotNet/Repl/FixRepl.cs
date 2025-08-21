@@ -56,8 +56,7 @@ namespace PrimeFixDotNet.Repl
                 }
                 catch (Exception e)
                 {
-                    Logger.Error(e, "Error processing command");
-                    Console.WriteLine($"Error: {e.Message}");
+                    Logger.Error(e, "Error processing command: {Message}", e.Message);
                 }
             }
 
@@ -118,26 +117,28 @@ namespace PrimeFixDotNet.Repl
 
         private void ShowHelp()
         {
-            Console.WriteLine("Available commands:");
-            Console.WriteLine("  new <symbol> <MARKET|LIMIT|VWAP> <BUY|SELL> <BASE|QUOTE> <qty> [price] [start_time] [participation_rate] [expire_time]");
-            Console.WriteLine("      Create a new order");
-            Console.WriteLine("  status <ClOrdId> [OrderId] [Side] [Symbol]");
-            Console.WriteLine("      Request order status");
-            Console.WriteLine("  cancel <ClOrdId>");
-            Console.WriteLine("      Cancel an existing order");
-            Console.WriteLine("  list");
-            Console.WriteLine("      List all cached orders");
-            Console.WriteLine("  version");
-            Console.WriteLine("      Show application version");
-            Console.WriteLine("  help");
-            Console.WriteLine("      Show this help message");
-            Console.WriteLine("  exit");
-            Console.WriteLine("      Exit the application");
-            Console.WriteLine();
-            Console.WriteLine("Order Examples:");
-            Console.WriteLine("  Market buy 0.1 BTC: new BTC-USD MARKET BUY BASE 0.1");
-            Console.WriteLine("  Limit buy $1000 of BTC at $30000: new BTC-USD LIMIT BUY QUOTE 1000 30000");
-            Console.WriteLine("  VWAP buy 1 BTC: new BTC-USD VWAP BUY BASE 1.0 50000 2025-08-01T10:00:00Z 0.1 2025-08-01T16:00:00Z");
+            string helpText = @"Available commands:
+  new <symbol> <MARKET|LIMIT|VWAP> <BUY|SELL> <BASE|QUOTE> <qty> [price] [start_time] [participation_rate] [expire_time]
+      Create a new order
+  status <ClOrdId> [OrderId] [Side] [Symbol]
+      Request order status
+  cancel <ClOrdId>
+      Cancel an existing order
+  list
+      List all cached orders
+  version
+      Show application version
+  help
+      Show this help message
+  exit
+      Exit the application
+
+Order Examples:
+  Market buy 0.1 BTC: new BTC-USD MARKET BUY BASE 0.1
+  Limit buy $1000 of BTC at $30000: new BTC-USD LIMIT BUY QUOTE 1000 30000
+  VWAP buy 1 BTC: new BTC-USD VWAP BUY BASE 1.0 50000 2025-08-01T10:00:00Z 0.1 2025-08-01T16:00:00Z";
+            
+            Logger.Information("{HelpText}", helpText);
         }
     }
 }

@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-using System.Collections.Concurrent;
 using PrimeFixDotNet.Builder;
 using PrimeFixDotNet.Constants;
 using PrimeFixDotNet.Model;
 using PrimeFixDotNet.Session;
 using PrimeFixDotNet.Utils;
 using QuickFix;
+using Serilog;
 
 namespace PrimeFixDotNet.Repl
 {
     public class CommandHandler
     {
+        private static readonly ILogger Logger = Log.ForContext<CommandHandler>();
         private readonly PrimeFixApplication _application;
 
         public CommandHandler(PrimeFixApplication application)
@@ -37,33 +38,34 @@ namespace PrimeFixDotNet.Repl
         {
             if (parts.Length < ApplicationConstants.MIN_NEW_ORDER_ARGS)
             {
-                Console.WriteLine("error: insufficient arguments");
-                Console.WriteLine("usage: new <symbol> <MARKET|LIMIT|VWAP> <BUY|SELL> <BASE|QUOTE> <qty> [price] [start_time] [participation_rate] [expire_time]");
+                Logger.Error("Insufficient arguments for new order command");
+                Logger.Information("Usage: new <symbol> <MARKET|LIMIT|VWAP> <BUY|SELL> <BASE|QUOTE> <qty> [price] [start_time] [participation_rate] [expire_time]");
                 return;
             }
 
-            string symbol = parts[ApplicationConstants.SYMBOL_INDEX];
-            string ordType = parts[ApplicationConstants.ORDER_TYPE_INDEX].ToUpper();
-            string side = parts[ApplicationConstants.SIDE_INDEX].ToUpper();
-            string qtyType = parts[ApplicationConstants.QTY_TYPE_INDEX].ToUpper();
-            string qty = parts[ApplicationConstants.QUANTITY_INDEX];
+            string symbol, ordType, side, qtyType, qty;
+            symbol = parts[ApplicationConstants.SYMBOL_INDEX];
+            ordType = parts[ApplicationConstants.ORDER_TYPE_INDEX].ToUpper();
+            side = parts[ApplicationConstants.SIDE_INDEX].ToUpper();
+            qtyType = parts[ApplicationConstants.QTY_TYPE_INDEX].ToUpper();
+            qty = parts[ApplicationConstants.QUANTITY_INDEX];
             string? price = null;
 
             if (!FixConstants.SIDE_BUY.Equals(side) && !FixConstants.SIDE_SELL.Equals(side))
             {
-                Console.WriteLine("error: side must be BUY or SELL");
+                Logger.Error(" side must be BUY or SELL");
                 return;
             }
 
             if (!FixConstants.QTY_TYPE_BASE.Equals(qtyType) && !FixConstants.QTY_TYPE_QUOTE.Equals(qtyType))
             {
-                Console.WriteLine("error: quantity type must be BASE or QUOTE");
+                Logger.Error(" quantity type must be BASE or QUOTE");
                 return;
             }
 
             if (!FixUtils.IsValidNumber(qty))
             {
-                Console.WriteLine("error: qty must be a valid number");
+                Logger.Error(" qty must be a valid number");
                 return;
             }
 
@@ -72,7 +74,7 @@ namespace PrimeFixDotNet.Repl
                 case FixConstants.ORD_TYPE_MARKET:
                     if (parts.Length > ApplicationConstants.MIN_LIMIT_ORDER_ARGS)
                     {
-                        Console.WriteLine("error: MARKET orders should not include a price");
+                        Logger.Error(" MARKET orders should not include a price");
                         return;
                     }
                     break;
@@ -80,13 +82,13 @@ namespace PrimeFixDotNet.Repl
                 case FixConstants.ORD_TYPE_LIMIT:
                     if (parts.Length < ApplicationConstants.MIN_LIMIT_ORDER_ARGS)
                     {
-                        Console.WriteLine("error: price must be specified for LIMIT orders");
+                        Logger.Error(" price must be specified for LIMIT orders");
                         return;
                     }
                     price = parts[ApplicationConstants.PRICE_INDEX];
                     if (!FixUtils.IsValidNumber(price))
                     {
-                        Console.WriteLine("error: price must be a valid number");
+                        Logger.Error(" price must be a valid number");
                         return;
                     }
                     break;
@@ -94,19 +96,19 @@ namespace PrimeFixDotNet.Repl
                 case FixConstants.ORD_TYPE_VWAP:
                     if (parts.Length < ApplicationConstants.MIN_VWAP_ORDER_ARGS)
                     {
-                        Console.WriteLine("error: price must be specified for VWAP orders");
+                        Logger.Error(" price must be specified for VWAP orders");
                         return;
                     }
                     price = parts[ApplicationConstants.PRICE_INDEX];
                     if (!FixUtils.IsValidNumber(price))
                     {
-                        Console.WriteLine("error: price must be a valid number");
+                        Logger.Error(" price must be a valid number");
                         return;
                     }
                     break;
 
                 default:
-                    Console.WriteLine("error: order type must be MARKET, LIMIT, or VWAP");
+                    Logger.Error(" order type must be MARKET, LIMIT, or VWAP");
                     return;
             }
 
@@ -132,12 +134,12 @@ namespace PrimeFixDotNet.Repl
                 }
                 else
                 {
-                    Console.WriteLine("error: no active session");
+                    Logger.Error(" no active session");
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error building order: {e.Message}");
+                Logger.Error(e, "Error building order: {Message}", e.Message);
             }
         }
 
@@ -145,16 +147,17 @@ namespace PrimeFixDotNet.Repl
         {
             if (parts.Length < ApplicationConstants.MIN_STATUS_REQUEST_ARGS)
             {
-                Console.WriteLine("usage: status <ClOrdId> [OrderId] [Side] [Symbol]");
+                Logger.Information("Usage: status <ClOrdId> [OrderId] [Side] [Symbol]");
                 return;
             }
 
-            string clOrdId = parts[ApplicationConstants.STATUS_CL_ORD_ID_INDEX];
-            string orderId = parts.Length > ApplicationConstants.STATUS_ORDER_ID_INDEX ? parts[ApplicationConstants.STATUS_ORDER_ID_INDEX] : "";
-            string side = parts.Length > ApplicationConstants.STATUS_SIDE_INDEX ? parts[ApplicationConstants.STATUS_SIDE_INDEX] : "";
-            string symbol = parts.Length > ApplicationConstants.STATUS_SYMBOL_INDEX ? parts[ApplicationConstants.STATUS_SYMBOL_INDEX] : "";
+            string clOrdId, orderId, side, symbol;
+            clOrdId = parts[ApplicationConstants.STATUS_CL_ORD_ID_INDEX];
+            orderId = parts.Length > ApplicationConstants.STATUS_ORDER_ID_INDEX ? parts[ApplicationConstants.STATUS_ORDER_ID_INDEX] : "";
+            side = parts.Length > ApplicationConstants.STATUS_SIDE_INDEX ? parts[ApplicationConstants.STATUS_SIDE_INDEX] : "";
+            symbol = parts.Length > ApplicationConstants.STATUS_SYMBOL_INDEX ? parts[ApplicationConstants.STATUS_SYMBOL_INDEX] : "";
 
-            ConcurrentDictionary<string, OrderInfo> orders = _application.Orders;
+            Dictionary<string, OrderInfo> orders = _application.Orders;
             _application.OrdersLock.EnterReadLock();
             try
             {
@@ -181,7 +184,7 @@ namespace PrimeFixDotNet.Repl
 
             if (string.IsNullOrEmpty(orderId) || string.IsNullOrEmpty(side) || string.IsNullOrEmpty(symbol))
             {
-                Console.WriteLine("need OrderId, Side, and Symbol (not cached)");
+                Logger.Warning("Need OrderId, Side, and Symbol (not cached)");
                 return;
             }
 
@@ -199,12 +202,12 @@ namespace PrimeFixDotNet.Repl
                 }
                 else
                 {
-                    Console.WriteLine("error: no active session");
+                    Logger.Error(" no active session");
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error building status request: {e.Message}");
+                Logger.Error(e, "Error building status request: {Message}", e.Message);
             }
         }
 
@@ -212,13 +215,13 @@ namespace PrimeFixDotNet.Repl
         {
             if (parts.Length < ApplicationConstants.MIN_CANCEL_REQUEST_ARGS)
             {
-                Console.WriteLine("usage: cancel <ClOrdId>");
+                Logger.Information("Usage: cancel <ClOrdId>");
                 return;
             }
 
             string clOrdId = parts[ApplicationConstants.CANCEL_CL_ORD_ID_INDEX];
 
-            ConcurrentDictionary<string, OrderInfo> orders = _application.Orders;
+            Dictionary<string, OrderInfo> orders = _application.Orders;
             _application.OrdersLock.EnterReadLock();
             OrderInfo? orderInfo;
             try
@@ -232,7 +235,7 @@ namespace PrimeFixDotNet.Repl
 
             if (orderInfo == null)
             {
-                Console.WriteLine("unknown ClOrdId (not in cache)");
+                Logger.Warning("Unknown ClOrdId (not in cache)");
                 return;
             }
 
@@ -251,30 +254,32 @@ namespace PrimeFixDotNet.Repl
                 }
                 else
                 {
-                    Console.WriteLine("error: no active session");
+                    Logger.Error(" no active session");
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error building cancel request: {e.Message}");
+                Logger.Error(e, "Error building cancel request: {Message}", e.Message);
             }
         }
 
         public void HandleListOrders()
         {
-            ConcurrentDictionary<string, OrderInfo> orders = _application.Orders;
+            Dictionary<string, OrderInfo> orders = _application.Orders;
             _application.OrdersLock.EnterReadLock();
             try
             {
-                if (orders.IsEmpty)
+                if (orders.Count == 0)
                 {
-                    Console.WriteLine("(no cached orders)");
+                    Logger.Information("(No cached orders)");
                     return;
                 }
 
                 foreach (var order in orders.Values)
                 {
-                    Console.WriteLine($"{order.ClOrdId,ApplicationConstants.ORDER_LIST_ID_COLUMN_WIDTH} → {order.OrderId} ({order.Side} {order.Symbol} {order.Quantity})");
+                    Logger.Information("{ClOrdId} → {OrderId} ({Side} {Symbol} {Quantity})", 
+                        order.ClOrdId?.PadRight(-ApplicationConstants.ORDER_LIST_ID_COLUMN_WIDTH), 
+                        order.OrderId, order.Side, order.Symbol, order.Quantity);
                 }
             }
             finally
@@ -285,13 +290,13 @@ namespace PrimeFixDotNet.Repl
 
         public void HandleVersion()
         {
-            Console.WriteLine(VersionUtils.GetApplicationNameWithVersion());
+            Logger.Information("{ApplicationVersion}", VersionUtils.GetApplicationNameWithVersion());
         }
 
         public void HandleUnknownCommand(string command)
         {
-            Console.WriteLine($"unknown command: {command}");
-            Console.WriteLine("Commands: new, status, cancel, list, version, exit");
+            Logger.Warning("Unknown command: {Command}", command);
+            Logger.Information("Commands: new, status, cancel, list, version, exit");
         }
     }
 }
