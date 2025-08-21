@@ -42,15 +42,16 @@ namespace PrimeFixDotNet.Session
         private readonly ReaderWriterLockSlim _ordersLock;
         private readonly OrderCache _orderCache;
 
-        public PrimeFixApplication(string apiKey, string apiSecret, string passphrase,
-                                 string senderCompId, string targetCompId, string portfolioId)
+        public PrimeFixApplication(PrimeFixConfig config)
         {
-            _apiKey = apiKey;
-            _apiSecret = apiSecret;
-            _passphrase = passphrase;
-            _senderCompId = senderCompId;
-            _targetCompId = targetCompId;
-            _portfolioId = portfolioId;
+            config.Validate();
+            
+            _apiKey = config.AccessKey;
+            _apiSecret = config.SigningKey;
+            _passphrase = config.Passphrase;
+            _senderCompId = config.SvcAccountId;
+            _targetCompId = config.TargetCompId;
+            _portfolioId = config.PortfolioId;
             
             // Initialize order management
             _orders = new ConcurrentDictionary<string, OrderInfo>();

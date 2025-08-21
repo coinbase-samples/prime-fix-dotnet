@@ -15,6 +15,7 @@
  */
 
 using PrimeFixDotNet.Constants;
+using PrimeFixDotNet.Model;
 using PrimeFixDotNet.Repl;
 using PrimeFixDotNet.Session;
 using PrimeFixDotNet.Utils;
@@ -42,19 +43,12 @@ namespace PrimeFixDotNet
 
             try
             {
-                string accessKey = GetRequiredEnv("ACCESS_KEY");
-                string signingKey = GetRequiredEnv("SIGNING_KEY");
-                string passphrase = GetRequiredEnv("PASSPHRASE");
-                string svcAccountId = GetRequiredEnv("SVC_ACCOUNT_ID");
-                string targetCompId = GetEnvOrDefault("TARGET_COMP_ID", "COIN");
-                string portfolioId = GetRequiredEnv("PORTFOLIO_ID");
-
+                // Load configuration from environment variables
+                var config = PrimeFixConfig.FromEnvironment();
                 string configFile = args.Length > 0 ? args[0] : DEFAULT_CONFIG_FILE;
 
-                using var application = new PrimeFixApplication(
-                    accessKey, signingKey, passphrase,
-                    svcAccountId, targetCompId, portfolioId
-                );
+                // Create application with configuration object
+                using var application = new PrimeFixApplication(config);
 
                 var settings = new SessionSettings(configFile);
                 var storeFactory = new FileStoreFactory(settings);
@@ -136,29 +130,5 @@ namespace PrimeFixDotNet
             }
         }
 
-        private static string GetRequiredEnv(string name)
-        {
-            string? value = Environment.GetEnvironmentVariable(name);
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                Console.Error.WriteLine($"Error: Required environment variable {name} is not set");
-                Console.Error.WriteLine("Required environment variables:");
-                Console.Error.WriteLine("  ACCESS_KEY - Your API access key");
-                Console.Error.WriteLine("  SIGNING_KEY - Your API secret key");
-                Console.Error.WriteLine("  PASSPHRASE - Your API passphrase");
-                Console.Error.WriteLine("  SVC_ACCOUNT_ID - Your service account ID");
-                Console.Error.WriteLine("  PORTFOLIO_ID - Your portfolio ID");
-                Console.Error.WriteLine("Optional environment variables:");
-                Console.Error.WriteLine("  TARGET_COMP_ID - Target company ID (default: COIN)");
-                Environment.Exit(ApplicationConstants.EXIT_FAILURE);
-            }
-            return value.Trim();
-        }
-
-        private static string GetEnvOrDefault(string name, string defaultValue)
-        {
-            string? value = Environment.GetEnvironmentVariable(name);
-            return (!string.IsNullOrWhiteSpace(value)) ? value.Trim() : defaultValue;
-        }
     }
 }
