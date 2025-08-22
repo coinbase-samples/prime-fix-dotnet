@@ -34,7 +34,7 @@ namespace PrimeFixDotNet
 
         private static LogEventLevel GetLogLevel()
         {
-            string logLevel = Environment.GetEnvironmentVariable("LOG_LEVEL") ?? ApplicationConstants.DEFAULT_LOG_LEVEL;
+            var logLevel = Environment.GetEnvironmentVariable("LOG_LEVEL") ?? ApplicationConstants.DEFAULT_LOG_LEVEL;
             
             return logLevel.ToUpper() switch
             {
@@ -62,7 +62,7 @@ namespace PrimeFixDotNet
             {
                 // Load configuration from environment variables
                 var config = PrimeFixConfig.FromEnvironment();
-                string configFile = args.Length > 0 ? args[0] : DEFAULT_CONFIG_FILE;
+                var configFile = args.Length > 0 ? args[0] : DEFAULT_CONFIG_FILE;
 
                 // Create application with configuration object
                 using var application = new PrimeFixApplication(config);
@@ -96,10 +96,8 @@ namespace PrimeFixDotNet
                 Console.WriteLine("Waiting for FIX connection...");
 
                 // Verify connection with detailed status
-                bool connected;
-                int attempts;
-                connected = false;
-                attempts = 0;
+                var connected = false;
+                var attempts = 0;
                 while (!connected && attempts < ApplicationConstants.MAX_CONNECTION_ATTEMPTS)
                 {
                     await Task.Delay(ApplicationConstants.CONNECTION_RETRY_DELAY_MS);

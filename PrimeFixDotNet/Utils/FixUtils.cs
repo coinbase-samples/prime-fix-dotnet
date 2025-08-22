@@ -40,7 +40,7 @@ namespace PrimeFixDotNet.Utils
         {
             try
             {
-                string message = timestamp + msgType + sequence + apiKey + targetCompId + passphrase;
+                string message = $"{timestamp}{msgType}{sequence}{apiKey}{targetCompId}{passphrase}";
 
                 using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(apiSecret));
                 byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));

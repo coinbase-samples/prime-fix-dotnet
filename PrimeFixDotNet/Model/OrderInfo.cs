@@ -37,6 +37,8 @@ namespace PrimeFixDotNet.Model
         public string? ParticipationRate { get; set; }
 
         public string? QuantityType { get; set; } // "BASE" or "QUOTE"
+        
+        public string? OrderType { get; set; } // "LIMIT", "MARKET", etc.
 
         public OrderInfo() { }
 
@@ -61,6 +63,19 @@ namespace PrimeFixDotNet.Model
             Quantity = quantity;
             LimitPrice = limitPrice;
             QuantityType = quantityType;
+        }
+
+        public OrderInfo(string clOrdId, string orderId, string side, string symbol,
+                        string quantity, string limitPrice, string quantityType, string orderType)
+        {
+            ClOrdId = clOrdId;
+            OrderId = orderId;
+            Side = side;
+            Symbol = symbol;
+            Quantity = quantity;
+            LimitPrice = limitPrice;
+            QuantityType = quantityType;
+            OrderType = orderType;
         }
 
         public override string ToString()

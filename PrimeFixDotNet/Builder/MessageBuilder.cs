@@ -40,9 +40,10 @@ namespace PrimeFixDotNet.Builder
         }
 
         public static Message BuildNewOrderSingle(string symbol, string ordType, string side,
-                                                string qtyType, string qty, string? price,
+                                                string qtyType, string qty,
                                                 string portfolioId, string senderCompId,
-                                                string targetCompId, params string[] vwapParams)
+                                                string targetCompId, string? price = null,
+                                                params string[] vwapParams)
         {
             var message = new Message();
 

@@ -37,12 +37,12 @@ namespace PrimeFixDotNet.Model
         {
             return new PrimeFixConfig
             {
-                AccessKey = GetRequiredEnv("ACCESS_KEY"),
-                SigningKey = GetRequiredEnv("SIGNING_KEY"),
-                Passphrase = GetRequiredEnv("PASSPHRASE"),
-                SvcAccountId = GetRequiredEnv("SVC_ACCOUNT_ID"),
-                PortfolioId = GetRequiredEnv("PORTFOLIO_ID"),
-                TargetCompId = GetEnvOrDefault("TARGET_COMP_ID", FixConstants.DEFAULT_TARGET_COMP_ID)
+                AccessKey = GetRequiredEnv("PRIME_ACCESS_KEY"),
+                SigningKey = GetRequiredEnv("PRIME_SIGNING_KEY"),
+                Passphrase = GetRequiredEnv("PRIME_PASSPHRASE"),
+                SvcAccountId = GetRequiredEnv("PRIME_SVC_ACCOUNT_ID"),
+                PortfolioId = GetRequiredEnv("PRIME_PORTFOLIO_ID"),
+                TargetCompId = GetEnvOrDefault("PRIME_TARGET_COMP_ID", FixConstants.DEFAULT_TARGET_COMP_ID)
             };
         }
 
@@ -52,17 +52,17 @@ namespace PrimeFixDotNet.Model
         public void Validate()
         {
             if (string.IsNullOrWhiteSpace(AccessKey))
-                throw new InvalidOperationException("ACCESS_KEY is required");
+                throw new InvalidOperationException("PRIME_ACCESS_KEY is required");
             if (string.IsNullOrWhiteSpace(SigningKey))
-                throw new InvalidOperationException("SIGNING_KEY is required");
+                throw new InvalidOperationException("PRIME_SIGNING_KEY is required");
             if (string.IsNullOrWhiteSpace(Passphrase))
-                throw new InvalidOperationException("PASSPHRASE is required");
+                throw new InvalidOperationException("PRIME_PASSPHRASE is required");
             if (string.IsNullOrWhiteSpace(SvcAccountId))
-                throw new InvalidOperationException("SVC_ACCOUNT_ID is required");
+                throw new InvalidOperationException("PRIME_SVC_ACCOUNT_ID is required");
             if (string.IsNullOrWhiteSpace(PortfolioId))
-                throw new InvalidOperationException("PORTFOLIO_ID is required");
+                throw new InvalidOperationException("PRIME_PORTFOLIO_ID is required");
             if (string.IsNullOrWhiteSpace(TargetCompId))
-                throw new InvalidOperationException("TARGET_COMP_ID cannot be empty");
+                throw new InvalidOperationException("PRIME_TARGET_COMP_ID cannot be empty");
         }
 
         private static string GetRequiredEnv(string name)
@@ -70,15 +70,19 @@ namespace PrimeFixDotNet.Model
             string? value = Environment.GetEnvironmentVariable(name);
             if (string.IsNullOrWhiteSpace(value))
             {
-                Console.Error.WriteLine($"Error: Required environment variable {name} is not set");
-                Console.Error.WriteLine("Required environment variables:");
-                Console.Error.WriteLine("  ACCESS_KEY - Your API access key");
-                Console.Error.WriteLine("  SIGNING_KEY - Your API secret key");
-                Console.Error.WriteLine("  PASSPHRASE - Your API passphrase");
-                Console.Error.WriteLine("  SVC_ACCOUNT_ID - Your service account ID");
-                Console.Error.WriteLine("  PORTFOLIO_ID - Your portfolio ID");
-                Console.Error.WriteLine("Optional environment variables:");
-                Console.Error.WriteLine("  TARGET_COMP_ID - Target company ID (default: COIN)");
+                Console.Error.WriteLine($"""
+                    Error: Required environment variable {name} is not set
+                    
+                    Required environment variables:
+                      PRIME_ACCESS_KEY - Your API access key
+                      PRIME_SIGNING_KEY - Your API secret key
+                      PRIME_PASSPHRASE - Your API passphrase
+                      PRIME_SVC_ACCOUNT_ID - Your service account ID
+                      PRIME_PORTFOLIO_ID - Your portfolio ID
+                    
+                    Optional environment variables:
+                      PRIME_TARGET_COMP_ID - Target company ID (default: COIN)
+                    """);
                 Environment.Exit(ApplicationConstants.EXIT_FAILURE);
             }
             return value.Trim();

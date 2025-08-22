@@ -179,10 +179,28 @@ namespace PrimeFixDotNet.Session
                         limitPrice = "";
                     }
 
+                    string orderType = "";
+                    try
+                    {
+                        var ordTypeValue = message.GetChar(Tags.OrdType);
+                        orderType = ordTypeValue switch
+                        {
+                            '1' => "MARKET",
+                            '2' => "LIMIT",
+                            '3' => "STOP",
+                            '4' => "STOP_LIMIT",
+                            _ => ordTypeValue.ToString()
+                        };
+                    }
+                    catch
+                    {
+                        orderType = "UNKNOWN";
+                    }
+
                     // Convert FIX side to readable format
                     string side = sideValue == "1" ? FixConstants.SIDE_BUY : FixConstants.SIDE_SELL;
 
-                    var orderInfo = new OrderInfo(clOrdId, "", side, symbol, quantity, limitPrice, quantityType);
+                    var orderInfo = new OrderInfo(clOrdId, "", side, symbol, quantity, limitPrice, quantityType, orderType);
                     
                     _ordersLock.EnterWriteLock();
                     try

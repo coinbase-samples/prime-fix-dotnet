@@ -121,10 +121,11 @@ namespace PrimeFixDotNet.Repl
             try
             {
                 Message message = MessageBuilder.BuildNewOrderSingle(
-                    symbol, ordType, side, qtyType, qty, price,
+                    symbol, ordType, side, qtyType, qty,
                     _application.PortfolioId,
                     _application.SenderCompId,
                     _application.TargetCompId,
+                    price,
                     vwapParams
                 );
 

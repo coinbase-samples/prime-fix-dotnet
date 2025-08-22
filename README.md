@@ -39,11 +39,11 @@ This configuration enables QuickFIX/N to connect directly over TLS without relyi
 Your C# FIX client requires environment variables to sign the FIX Logon. Set the following in your shell before running:
 
 ```bash
-export ACCESS_KEY="your_api_access_key"
-export SIGNING_KEY="your_api_secret_key"
-export PASSPHRASE="your_api_passphrase"
-export PORTFOLIO_ID="your_portfolio_id"
-export SVC_ACCOUNT_ID="your_service_account_id"
+export PRIME_ACCESS_KEY="your_api_access_key"
+export PRIME_SIGNING_KEY="your_api_secret_key"
+export PRIME_PASSPHRASE="your_api_passphrase"
+export PRIME_PORTFOLIO_ID="your_portfolio_id"
+export PRIME_SVC_ACCOUNT_ID="your_service_account_id"
 ```
 
 ## 4. Run the C# FIX Client
